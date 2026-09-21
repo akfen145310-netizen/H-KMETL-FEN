@@ -1,0 +1,8 @@
+{
+  "name": "Hikmetli Fen Bilimleri",
+  "description": "Fen bilimleri konularını kainattaki sanat, hikmet ve mükemmel nizam penceresinden, Yaratıcı'nın eserleri olarak anlatan dijital kitap ve dönüştürme platformu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
