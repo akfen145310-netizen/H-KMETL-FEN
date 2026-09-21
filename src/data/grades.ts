@@ -1,5 +1,6 @@
 import { MAARIF_MODEL_GRADES, getMaarifCurriculumStats } from './maarifModel';
 import { ALL_MAARIF_GRADES } from './curriculum';
+import { isConverterAuthenticated } from '../utils/authService';
 
 export interface ChapterContent {
   id: string;
@@ -74,6 +75,11 @@ export const getStoredGrades = (): Grade[] => {
 
 export const saveStoredGrades = (data: Grade[]): void => {
   if (typeof window === "undefined") return;
+  // Güvenlik doğrulaması: Veri tabanında kalıcı değişiklik sadece yetkili oturumuyla yapılabilir
+  if (!isConverterAuthenticated()) {
+    console.warn("Yetkisiz veri kaydetme engellendi: saveStoredGrades yalnızca yetkili kullanıcılar tarafından çağrılabilir.");
+    return;
+  }
   try {
     localStorage.setItem(GRADES_STORAGE_KEY, JSON.stringify(data));
     for (let i = 0; i < data.length; i++) {
@@ -101,6 +107,14 @@ export const updateChapterContent = (
   chapterId: string,
   newContent: string
 ): UpdateChapterResult => {
+  // Güvenlik denetimi: Değişiklik yetkili şifresi gerektirir
+  if (!isConverterAuthenticated()) {
+    return {
+      success: false,
+      error: "Yetkisiz işlem! Konu içeriğini güncellemek veya değiştirmek için yetkili şifresi ile oturum açılmalıdır."
+    };
+  }
+
   const currentGrades = getStoredGrades();
   let foundGradeName = "";
   let foundUnitTitle = "";
@@ -217,6 +231,11 @@ export const addNewChapter = (
 };
 
 export const resetChapterToDefault = (gradeId: string, chapterId: string): boolean => {
+  if (!isConverterAuthenticated()) {
+    console.warn("Yetkisiz işlem: resetChapterToDefault yetkili şifresi gerektirir.");
+    return false;
+  }
+
   const defaultGrade = gradesData.find((g) => g.id === gradeId);
   if (!defaultGrade) return false;
 
@@ -235,6 +254,10 @@ export const resetChapterToDefault = (gradeId: string, chapterId: string): boole
 
 export const resetAllGradesToDefault = (): void => {
   if (typeof window === "undefined") return;
+  if (!isConverterAuthenticated()) {
+    console.warn("Yetkisiz işlem: resetAllGradesToDefault yetkili şifresi gerektirir.");
+    return;
+  }
   localStorage.removeItem(GRADES_STORAGE_KEY);
   for (const legacy of LEGACY_STORAGE_KEYS) {
     localStorage.removeItem(legacy);
@@ -247,6 +270,15 @@ export { MAARIF_MODEL_GRADES, getMaarifCurriculumStats } from './maarifModel';
 export const applyMaarifCurriculum = (mode: 'replace' | 'merge' = 'replace') => {
   if (typeof window === "undefined") {
     return { success: true, stats: getMaarifCurriculumStats() };
+  }
+
+  if (!isConverterAuthenticated()) {
+    console.warn("Yetkisiz işlem: applyMaarifCurriculum yetkili şifresi gerektirir.");
+    return {
+      success: false,
+      stats: getMaarifCurriculumStats(),
+      error: "Yetkisiz işlem! Maarif müfredatını uygulamak veya değiştirmek için yetkili şifresi gereklidir."
+    };
   }
 
   if (mode === 'replace') {

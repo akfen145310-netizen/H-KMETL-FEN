@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookType, Sparkles } from 'lucide-react';
+import { ArrowRight, BookType, Sparkles, Lock } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -39,10 +39,14 @@ export default function Home() {
           </Link>
           <Link
             to="/donusturucu"
-            className="flex items-center gap-2 bg-white text-primary-900 border-2 border-primary-200 px-8 py-3 rounded-full font-medium hover:bg-primary-50 transition w-full sm:w-auto justify-center"
+            className="flex items-center gap-2 bg-white text-primary-900 border-2 border-primary-200 px-8 py-3 rounded-full font-medium hover:bg-primary-50 transition w-full sm:w-auto justify-center group"
           >
-            <Sparkles className="w-5 h-5" />
-            Metin Dönüştür
+            <Sparkles className="w-5 h-5 text-amber-500 group-hover:rotate-12 transition-transform" />
+            <span>Metin Dönüştür</span>
+            <span className="text-3xs bg-amber-100 text-amber-950 font-bold px-2 py-0.5 rounded-full border border-amber-300 flex items-center gap-0.5 ml-1">
+              <Lock className="w-2.5 h-2.5 text-amber-700" />
+              Yetkili
+            </span>
           </Link>
         </motion.div>
       </div>

@@ -2,9 +2,26 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { motion } from 'motion/react';
-import { ArrowLeft, Download, RotateCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  ArrowLeft, 
+  Download, 
+  RotateCcw, 
+  Copy, 
+  Check, 
+  Lock, 
+  KeyRound, 
+  AlertCircle, 
+  Eye, 
+  EyeOff, 
+  X 
+} from 'lucide-react';
 import { getStoredGrades, Grade, resetChapterToDefault } from '../data/grades';
+import { 
+  isConverterAuthenticated, 
+  loginConverter, 
+  DEFAULT_ADMIN_PASSWORD 
+} from '../utils/authService';
 import { HikmetliImage } from '../components/HikmetliImage';
 import { HikmetliTableWrapper } from '../components/HikmetliTableWrapper';
 import html2canvas from 'html2canvas';
@@ -16,6 +33,13 @@ export default function ChapterView() {
   const pdfRef = useRef<HTMLDivElement>(null);
   const [grades, setGrades] = useState<Grade[]>(getStoredGrades);
   const [showResetNotice, setShowResetNotice] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Authorized reset modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -29,12 +53,66 @@ export default function ChapterView() {
   const unit = grade?.units.find(u => u.chapters.some(c => c.id === chapterId));
   const chapter = unit?.chapters.find(c => c.id === chapterId);
 
-  const handleResetToDefault = () => {
+  const performReset = () => {
     if (!gradeId || !chapterId) return;
-    if (window.confirm("Bu bölümün içeriğini orijinal varsayılan metne sıfırlamak istiyor musunuz?")) {
-      resetChapterToDefault(gradeId, chapterId);
+    const success = resetChapterToDefault(gradeId, chapterId);
+    if (success) {
       setShowResetNotice(true);
       setTimeout(() => setShowResetNotice(false), 3000);
+    }
+  };
+
+  const handleResetToDefault = () => {
+    if (!gradeId || !chapterId) return;
+
+    // Check if user is authenticated
+    if (isConverterAuthenticated()) {
+      if (window.confirm("Bu bölümün içeriğini orijinal varsayılan metne sıfırlamak istiyor musunuz?")) {
+        performReset();
+      }
+    } else {
+      // Prompt for authorized password
+      setAuthPassword('');
+      setAuthError('');
+      setShowAuthModal(true);
+    }
+  };
+
+  const handleAuthSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    if (!authPassword.trim()) {
+      setAuthError('Lütfen yetkili şifresini giriniz.');
+      return;
+    }
+
+    const success = loginConverter(authPassword);
+    if (success) {
+      setShowAuthModal(false);
+      setAuthPassword('');
+      setAuthError('');
+      performReset();
+    } else {
+      setAuthError('Hatalı yetkili şifresi! Bölüm içeriğini sıfırlama işlemi yalnızca yetkili öğretmen ve yöneticiler tarafından yapılabilir.');
+    }
+  };
+
+  const handleCopyContent = async () => {
+    if (!chapter) return;
+    try {
+      await navigator.clipboard.writeText(chapter.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = chapter.content;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -88,7 +166,7 @@ export default function ChapterView() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+      className="w-full max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-10 py-8 md:py-12"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <Link 
@@ -99,21 +177,44 @@ export default function ChapterView() {
           {grade.name} Konularına Dön
         </Link>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button 
-            onClick={handleResetToDefault}
-            title="Konu içeriğini orijinal başlangıç metnine geri döndür"
-            className="inline-flex items-center gap-1.5 text-primary-700 bg-primary-50 border border-primary-200/80 px-3 py-2 rounded-lg text-xs md:text-sm font-medium hover:bg-primary-100 transition"
+            onClick={handleCopyContent}
+            title="Bu bölümün tüm metnini panoya kopyala"
+            className="inline-flex items-center gap-1.5 text-primary-800 bg-white border border-primary-200 px-3 py-2 rounded-lg text-xs md:text-sm font-medium hover:bg-primary-50 transition shadow-2xs cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Orijinale Sıfırla
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-emerald-700 font-semibold">Kopyalandı!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 text-primary-600" />
+                <span>Metni Kopyala</span>
+              </>
+            )}
           </button>
+
           <button 
             onClick={downloadPDF}
-            className="inline-flex items-center gap-2 bg-primary-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition shadow-sm"
+            className="inline-flex items-center gap-1.5 bg-primary-800 text-white px-3.5 py-2 rounded-lg text-xs md:text-sm font-medium hover:bg-primary-700 transition shadow-sm cursor-pointer"
           >
-            <Download className="w-4 h-4" />
-            PDF Olarak İndir
+            <Download className="w-3.5 h-3.5" />
+            <span>PDF İndir</span>
+          </button>
+
+          <button 
+            onClick={handleResetToDefault}
+            title="Konu içeriğini orijinal başlangıç metnine geri döndür (Yetkili Şifresi Gerekir)"
+            className="inline-flex items-center gap-1.5 text-primary-700 bg-primary-50 border border-primary-200/80 px-3 py-2 rounded-lg text-xs md:text-sm font-medium hover:bg-primary-100 transition cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-primary-600" />
+            <span>Orijinale Sıfırla</span>
+            <span className="text-3xs bg-amber-400/20 text-amber-950 px-1.5 py-0.5 rounded border border-amber-300/40 flex items-center gap-0.5 font-normal ml-0.5">
+              <Lock className="w-2.5 h-2.5" />
+              Yetkili
+            </span>
           </button>
         </div>
       </div>
@@ -153,7 +254,7 @@ export default function ChapterView() {
             </div>
           )}
 
-          <div className={`md:px-12 px-6 ${!chapter.imageUrl ? 'pt-12' : 'pt-8'}`}>
+          <div className={`px-6 sm:px-8 md:px-12 lg:px-16 ${!chapter.imageUrl ? 'pt-10 md:pt-14' : 'pt-8 md:pt-10'}`}>
              {!chapter.imageUrl && (
                 <div className="mb-10">
                    <div className="text-primary-800/60 font-medium text-sm mb-2 uppercase tracking-widest">
@@ -212,6 +313,109 @@ export default function ChapterView() {
         </div>
         {/* PDF Capture Region Ends Here */}
       </article>
+
+      {/* AUTHORIZATION REQUIRED MODAL FOR RESET */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 15 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border-2 border-primary-200 shadow-2xl relative"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAuthModal(false);
+                  setAuthPassword('');
+                  setAuthError('');
+                }}
+                className="absolute right-5 top-5 text-primary-400 hover:text-primary-800 p-1.5 rounded-full hover:bg-primary-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center mb-4 border border-amber-300 shadow-xs">
+                <Lock className="w-7 h-7 text-amber-800" />
+              </div>
+
+              <span className="inline-block px-2.5 py-0.5 bg-amber-100 text-amber-950 text-2xs font-bold uppercase tracking-wider rounded-full border border-amber-300 mb-2">
+                Yetkili Onayı Gerekli
+              </span>
+
+              <h3 className="text-xl font-serif font-bold text-primary-950 mb-1.5">
+                Konu İçeriğini Sıfırlama Yetkilendirmesi
+              </h3>
+
+              <p className="text-xs text-primary-800/80 mb-4 leading-relaxed">
+                Bu ders konusunun içeriğini orijinal haline geri döndürmek veya değiştirmek yalnızca yetkili öğretmen ve yöneticilere açıktır. Lütfen yetkili şifrenizi giriniz.
+              </p>
+
+              {authError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleAuthSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-primary-900 mb-1">
+                    Yetkili Şifresi
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      placeholder="Yetkili şifrenizi giriniz..."
+                      autoFocus
+                      required
+                      className="w-full px-3.5 py-2.5 pr-10 bg-primary-50/50 border border-primary-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 focus:bg-white transition"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-500 hover:text-primary-800 transition p-1 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-2xs text-amber-950">
+                  <span className="font-bold">Başlangıç Şifresi:</span>{' '}
+                  <code className="bg-white px-1.5 py-0.5 rounded border border-amber-300 font-mono font-bold text-amber-900">
+                    {DEFAULT_ADMIN_PASSWORD}
+                  </code>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAuthModal(false);
+                      setAuthPassword('');
+                      setAuthError('');
+                    }}
+                    className="px-4 py-2 rounded-xl border border-primary-300 text-xs font-semibold text-primary-800 hover:bg-primary-50 transition cursor-pointer"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-primary-900 hover:bg-primary-800 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  >
+                    <KeyRound className="w-4 h-4 text-amber-300" />
+                    Doğrula ve Sıfırla
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
