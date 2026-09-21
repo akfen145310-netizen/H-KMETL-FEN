@@ -34,7 +34,13 @@ import {
   Scroll,
   CheckCircle,
   AlertTriangle,
-  GraduationCap
+  GraduationCap,
+  Lock,
+  Unlock,
+  KeyRound,
+  ShieldAlert,
+  LogOut,
+  EyeOff
 } from 'lucide-react';
 import { rewriteScienceText, analyzeAndRewriteWebLink, WebRewriteResult } from '../services/geminiService';
 import { scrapeWebPage, ScrapedPageData } from '../services/webScraper';
@@ -56,6 +62,13 @@ import {
   autoEnforceHikmetliCompliance,
   ComplianceAuditResult
 } from '../utils/hikmetliRules';
+import {
+  isConverterAuthenticated,
+  loginConverter,
+  logoutConverter,
+  updateConverterPassword,
+  DEFAULT_ADMIN_PASSWORD
+} from '../utils/authService';
 
 export default function Converter() {
   // Mode: 'url' (web link) or 'text' (manual text paste)
@@ -95,6 +108,66 @@ export default function Converter() {
   const [updateResult, setUpdateResult] = useState<UpdateChapterResult | null>(null);
   const [lastUpdatedChapter, setLastUpdatedChapter] = useState<{ gradeId: string; chapterId: string } | null>(null);
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
+
+  // Authentication state for authorized converter access
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isConverterAuthenticated());
+  const [authPasswordInput, setAuthPasswordInput] = useState<string>('');
+  const [authError, setAuthError] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+
+  // Change Password Modal state
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState<boolean>(false);
+  const [oldPasswordInput, setOldPasswordInput] = useState<string>('');
+  const [newPasswordInput, setNewPasswordInput] = useState<string>('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState<string>('');
+  const [changePasswordMsg, setChangePasswordMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  const handleLogin = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setAuthError('');
+    if (!authPasswordInput.trim()) {
+      setAuthError('Lütfen yetkili şifresini giriniz.');
+      return;
+    }
+    const success = loginConverter(authPasswordInput);
+    if (success) {
+      setIsAuthenticated(true);
+      setAuthPasswordInput('');
+      setAuthError('');
+    } else {
+      setAuthError('Hatalı yetkili şifresi! Dönüştürücü sadece yetkili kullanıcılar tarafından kullanılabilir.');
+    }
+  };
+
+  const handleLogout = () => {
+    logoutConverter();
+    setIsAuthenticated(false);
+    setAuthPasswordInput('');
+    setAuthError('');
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setChangePasswordMsg(null);
+    if (newPasswordInput !== confirmPasswordInput) {
+      setChangePasswordMsg({ type: 'error', text: 'Yeni şifreler birbiriyle eşleşmiyor.' });
+      return;
+    }
+    const result = updateConverterPassword(oldPasswordInput, newPasswordInput);
+    if (result.success) {
+      setChangePasswordMsg({ type: 'success', text: result.message });
+      setTimeout(() => {
+        setShowChangePasswordModal(false);
+        setOldPasswordInput('');
+        setNewPasswordInput('');
+        setConfirmPasswordInput('');
+        setChangePasswordMsg(null);
+        setNotificationMessage('Yetkili şifreniz başarıyla güncellendi.');
+      }, 1200);
+    } else {
+      setChangePasswordMsg({ type: 'error', text: result.message });
+    }
+  };
 
   // Sync grades whenever custom event fires
   useEffect(() => {
@@ -278,8 +351,154 @@ export default function Converter() {
     setNotificationMessage('Metin Hikmetli Yorum Çıktısı Kurallarına %100 uyumlu hale getirildi (Mukaddime, Hikmet Pencereleri, Hülasa).');
   };
 
+  // 1. YETKİLİ GİRİŞİ KONTROLÜ (Yetkili Şifresi Olmadan Dönüştürücü Kullanılamaz)
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-[82vh] flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 border-2 border-primary-200 shadow-xl"
+        >
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-900 mx-auto flex items-center justify-center mb-4 border border-amber-300 shadow-xs">
+              <Lock className="w-8 h-8 text-amber-800" />
+            </div>
+            <span className="inline-block px-3 py-1 bg-amber-100/80 text-amber-950 text-2xs font-bold uppercase tracking-wider rounded-full border border-amber-300 mb-2">
+              Korumalı Alan • Yetkili Girişi
+            </span>
+            <h2 className="text-2xl font-serif font-bold text-primary-950">
+              Dönüştürücü Girişi
+            </h2>
+            <p className="text-xs sm:text-sm text-primary-800/80 mt-2 leading-relaxed">
+              Fen bilimleri konularını Risale-i Nur düşünce örgüsüyle dönüştürme ve kütüphaneyi güncelleme araçları yalnızca yetkilendirilmiş öğretmen ve yöneticilere açıktır.
+            </p>
+          </div>
+
+          {authError && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-start gap-2.5"
+            >
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+              <span>{authError}</span>
+            </motion.div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-primary-900 mb-1.5">
+                Yetkili Şifresi
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={authPasswordInput}
+                  onChange={(e) => setAuthPasswordInput(e.target.value)}
+                  placeholder="Yetkili şifrenizi giriniz..."
+                  autoFocus
+                  className="w-full px-4 py-3 pr-11 bg-primary-50/50 border border-primary-300 rounded-xl text-sm text-primary-950 placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:bg-white transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-500 hover:text-primary-800 transition p-1"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 bg-primary-900 hover:bg-primary-800 text-white rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+            >
+              <KeyRound className="w-4 h-4 text-amber-300" />
+              Yetkiyi Doğrula ve Giriş Yap
+            </button>
+          </form>
+
+          <div className="mt-6 pt-5 border-t border-primary-200/80 text-center space-y-3">
+            <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-2xs text-amber-950">
+              <span className="font-bold">Sistem Başlangıç Şifresi:</span>{' '}
+              <code className="bg-white px-1.5 py-0.5 rounded border border-amber-300 font-mono font-bold text-amber-900">
+                {DEFAULT_ADMIN_PASSWORD}
+              </code>
+              <div className="text-3xs text-amber-800/80 mt-1">
+                (Giriş yaptıktan sonra üst panelden şifrenizi dilediğiniz gibi güncelleyebilirsiniz)
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-4 text-xs">
+              <Link
+                to="/kutuphane"
+                className="text-primary-700 hover:text-primary-950 hover:underline"
+              >
+                ← Kütüphaneye Dön
+              </Link>
+              <span className="text-primary-300">•</span>
+              <Link
+                to="/"
+                className="text-primary-700 hover:text-primary-950 hover:underline"
+              >
+                Ana Sayfa
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+      {/* Top Authorized Session Bar */}
+      <div className="mb-6 bg-gradient-to-r from-amber-50 via-primary-50 to-amber-50 border border-amber-300/80 rounded-2xl px-4 sm:px-6 py-3 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-900 flex items-center justify-center shrink-0 border border-amber-300">
+            <ShieldCheck className="w-5 h-5 text-amber-800" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-primary-950 flex items-center gap-2">
+              Yetkili Oturumu Aktif
+              <span className="text-3xs font-semibold px-2 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full">
+                Yönetici & Eğitimci
+              </span>
+            </div>
+            <div className="text-2xs text-primary-800/80">
+              Dönüştürücü ve kütüphane güncelleme yetkisi tanımlandı.
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setChangePasswordMsg(null);
+              setOldPasswordInput('');
+              setNewPasswordInput('');
+              setConfirmPasswordInput('');
+              setShowChangePasswordModal(true);
+            }}
+            className="px-3 py-1.5 text-xs font-semibold text-primary-900 bg-white hover:bg-primary-50 rounded-lg border border-primary-300 transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+          >
+            <KeyRound className="w-3.5 h-3.5 text-primary-700" />
+            Şifre Değiştir
+          </button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Yetkili oturumunu kapatır ve dönüştürücüyü kilitler"
+            className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-white hover:bg-red-50 rounded-lg border border-red-200 transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5 text-red-600" />
+            Oturumu Kapat / Kilitle
+          </button>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 bg-primary-100 text-primary-900 px-4 py-1.5 rounded-full text-sm font-semibold mb-3">
@@ -1213,6 +1432,119 @@ export default function Converter() {
                   Tamam, Anladım
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* CHANGE PASSWORD MODAL */}
+      <AnimatePresence>
+        {showChangePasswordModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 15 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border-2 border-primary-200 shadow-2xl relative"
+            >
+              <button
+                type="button"
+                onClick={() => setShowChangePasswordModal(false)}
+                className="absolute right-5 top-5 text-primary-400 hover:text-primary-800 p-1.5 rounded-full hover:bg-primary-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center mb-4">
+                <KeyRound className="w-6 h-6 text-amber-800" />
+              </div>
+
+              <h3 className="text-xl font-serif font-bold text-primary-950 mb-1">
+                Yetkili Şifresini Değiştir
+              </h3>
+              <p className="text-xs text-primary-800/80 mb-4">
+                Dönüştürücüye giriş için yeni bir yetkili şifresi belirleyin.
+              </p>
+
+              {changePasswordMsg && (
+                <div
+                  className={`mb-4 p-3 rounded-xl text-xs flex items-center gap-2 ${
+                    changePasswordMsg.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-red-50 text-red-800 border border-red-200'
+                  }`}
+                >
+                  {changePasswordMsg.type === 'success' ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  )}
+                  <span>{changePasswordMsg.text}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleChangePassword} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-primary-900 mb-1">
+                    Mevcut Yetkili Şifresi
+                  </label>
+                  <input
+                    type="password"
+                    value={oldPasswordInput}
+                    onChange={(e) => setOldPasswordInput(e.target.value)}
+                    required
+                    placeholder="Mevcut şifreniz..."
+                    className="w-full px-3.5 py-2.5 bg-primary-50/50 border border-primary-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 focus:bg-white transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-primary-900 mb-1">
+                    Yeni Şifre
+                  </label>
+                  <input
+                    type="password"
+                    value={newPasswordInput}
+                    onChange={(e) => setNewPasswordInput(e.target.value)}
+                    required
+                    minLength={4}
+                    placeholder="Yeni şifreniz (en az 4 karakter)..."
+                    className="w-full px-3.5 py-2.5 bg-primary-50/50 border border-primary-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 focus:bg-white transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-primary-900 mb-1">
+                    Yeni Şifre (Tekrar)
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPasswordInput}
+                    onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                    required
+                    minLength={4}
+                    placeholder="Yeni şifreyi tekrar giriniz..."
+                    className="w-full px-3.5 py-2.5 bg-primary-50/50 border border-primary-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 focus:bg-white transition"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowChangePasswordModal(false)}
+                    className="px-4 py-2 rounded-xl border border-primary-300 text-xs font-semibold text-primary-800 hover:bg-primary-50 transition cursor-pointer"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-primary-900 hover:bg-primary-800 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  >
+                    <Check className="w-4 h-4 text-amber-300" />
+                    Şifreyi Güncelle
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
