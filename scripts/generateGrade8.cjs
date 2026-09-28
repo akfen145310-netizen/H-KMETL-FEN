@@ -6,66 +6,8 @@ if (!fs.existsSync(curriculumDir)) {
   fs.mkdirSync(curriculumDir, { recursive: true });
 }
 
-// Helper to build chapter content with 10-Stage Risale-i Nur Thought Framework (8. Sınıf Seviyesi)
-function makeChapter({ id, title, hikmetliTitle, shortDesc, imageUrl, fenConcept, tefekkurInsight, tableRows, conclusion, gradeLevel = 8 }) {
-  const content = `
-# ${hikmetliTitle}
-
-> **Bismillah:** *"Bütün mevcudat lisan-ı hal ile Bismillah der; Halık-ı Zülcelal'in namına hareket edip, O'nun rahmet ve hikmet hazinelerinden birer numuneyi bize takdim eder."*
-
-## 1. Varlığı Tanıt (Sistemin Kapısını Aralama)
-**${title}**, kainat kitabında sergilenen yüksek hendesenin, ilahi programlamanın ve derin hikmetin en hayret verici sayfalarından biridir. ${shortDesc} Bu sistem, varlık sahnesinde kendi kendine veya rastlantıyla ortaya çıkmış değildir; her bir noktası gayeli, hikmetli ve bir amaca hizmet edecek şekilde var edilmiştir.
-
-## 2. Parçalarını Göster & 3. Her Parçanın Vazifesi (Nasıl ve Neden?)
-Bu sistemde vazifeli olan nükleotidler, elementler, bağlar, kuvvetler ve kavramlar iki derin katmanda şöyle anlaşılır:
-
-- **1. Katman ("NASIL?" — Bilimsel Mekanizma ve Kanunlar):**
-${fenConcept}
-
-- **2. Katman ("NEDEN?" — Hikmet, Gaye ve İlahi Sanat):**
-${tefekkurInsight}
-
-${imageUrl ? `![${hikmetliTitle}](${imageUrl})
-fenbilim.net alıntıdır. [Resim Link](${imageUrl})
-> **Tefekkür Dürbünü:** Görseldeki hassas yapı ve nizam; kör, sağır ve şuursuz maddelerin değil, her şeyi her an gören ve bilen bir Sanatkârın mührüdür.
-` : ''}
-
-## 4. Parçalar Arasındaki Harika Uyum (Müthiş İttifak)
-Bu sistemin hiçbir parçası diğerinden habersiz değildir. Tıpkı DNA'daki şifrelerin veya periyodik cetveldeki elementlerin intizamı gibi, tüm unsurlar tam bir dayanışma ve yardımlaşma ile tek bir ortak maksada hizmet eder. Bir nükleotidin veya bağın yer değiştirmesi felakete yol açacakken, kusursuz bir vazife şuuruyla hareket edilir.
-
-## 5. Ölçü, Mizan ve İnce Düzen
-Sistemdeki oranlar, periyotlar, genetik kodlar ve kimyasal tepkime dengeleri şaşmaz bir matematiksel hendese ile takdir edilmiştir. Ölçüdeki en ufak bir sapma tüm ahengi bozacakken, kanunların şaşmaz bir istikrarla işlemesi mutlak bir nizamın varlığını ispatlar.
-
-## 6. Temsil ve Benzetme Dürbünü (Hakikate Açılan Pencere)
-Gelin bu hakikati 8. sınıf seviyemize uygun bir temsil dürbünüyle anlayalım:
-Nasıl ki milyonlarca satır kusursuz koddan oluşan devasa bir işletim sistemi veya trilyonlarca parçası uyumla çalışan bir süper bilgisayar; rastgele harf dizilimleriyle veya tesadüfen meydana gelemez. Aynen öyle de **${title}** nizamı, kainattaki o muazzam ilahi yazılım ve hendesenin şaşmaz bir şubesidir.
-
-## 7. Hikmet Penceresi: Canlıya ve Kainata Sunulan Hizmet
-Bu sistemin canlılar alemi, insan hayatı ve yeryüzündeki genetik-kimyasal denge için sunduğu rahmetli hizmetler:
-
-| Fen Bilimleri Unsuru ("Nasıl?") | Hikmet ve İlahî Tecelli ("Neden?") | İnce Ayar ve Tefekkür Dersi |
-| :--- | :--- | :--- |
-${tableRows.map(r => `| ${r[0]} | ${r[1]} | ${r[2]} |`).join('\n')}
-
-## 8. İrade, Sanat ve Program Perspektifi
-Aklı, şuuru, bilgisi ve merhameti olmayan cansız atomların, kimyasal bağların veya genetik şifrelerin böylesine muazzam bir gayede birleşmesi; onların kendi kabiliyeti değildir. Bu durum, her şeyin arkasında sonsuz bir İrade, Program, Kusursuz Sanat ve Hikmet Sahibinin (Sâni-i Zülcelal'in) bulunduğunu açıkça ilan eder.
-
-## 9. Akıl Yürütme ve Basiret Terazisi
-> **Tefekkür ve Muhakeme Sorusu:** *"Bu kadar farklı parçanın birbirini tamamlayacak şekilde kusursuz çalışması bize nasıl bir düzen gösteriyor? Bir harf katipsiz, bir köy muhtarsız, bir iğne ustasız olamazken; bu harika sistem nasıl sahipsiz ve programsız olabilir?"*
-
-## 10. Netice ve Tefekkür Meyvesi
-${conclusion}
-`.trim();
-
-  return {
-    id,
-    title,
-    hikmetliTitle,
-    shortDescription: shortDesc,
-    imageUrl,
-    content
-  };
-}
+const { buildTurkishTeacherChapter } = require('./turkishTeacherEngine.cjs');
+const makeChapter = buildTurkishTeacherChapter;
 
 // ==========================================
 // GRADE 8
@@ -449,6 +391,6 @@ console.log("Grade 8 units built successfully with total chapters:", grade8Units
 
 fs.writeFileSync(
   path.join(curriculumDir, "grade8.ts"),
-  `import { Grade } from '../grades';\n\nexport const GRADE_8_CURRICULUM: Grade = {\n  id: "8",\n  name: "8. Sınıf",\n  description: "Türkiye Yüzyılı Maarif Modeli ve Fenbilim.net müfredatına göre hazırlanmış 7 ünite ve 22 alt konu başlığında Hikmetli Fen tefekkür okumaları.",\n  units: ${JSON.stringify(grade8Units, null, 2)}\n};\n`
+  `import { Grade } from '../grades';\n\nexport const GRADE_8_CURRICULUM: Grade = {\n  id: "8",\n  name: "8. Sınıf",\n  description: "Türkiye Yüzyılı Maarif Modeli müfredatına göre hazırlanmış 7 ünite ve 22 alt konu başlığında Hikmetli Fen tefekkür okumaları.",\n  units: ${JSON.stringify(grade8Units, null, 2)}\n};\n`
 );
 console.log("grade8.ts written!");

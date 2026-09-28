@@ -367,9 +367,9 @@ export async function scrapeWebPage(inputUrl: string): Promise<ScrapedPageData> 
   }
 
   if (scrapedImages.length > 0) {
-    promptBuilder += `\n### SAYFADAKİ GÖRSELLER (METNE YERLEŞTİRİLİRKEN ALTINA TAM ALINTI LİNKİ EKLENMELİDİR):\n`;
+    promptBuilder += `\n### SAYFADAKİ GÖRSELLER (METNE YERLEŞTİRİLİRKEN UYGUN BÖLÜMLERE EKLENMELİDİR):\n`;
     scrapedImages.forEach((img, i) => {
-      promptBuilder += `- Görsel ${i + 1}: URL: ${img.src} | Açıklama: ${img.alt}${img.caption ? ` | Altyazı: ${img.caption}` : ''}\n  (Zorunlu kural: Metne eklerken altına "fenbilim.net alıntıdır. [Resim Link](${img.src})" şeklinde alıntı ve resim linkini yerleştir.)\n`;
+      promptBuilder += `- Görsel ${i + 1}: URL: ${img.src} | Açıklama: ${img.alt}${img.caption ? ` | Altyazı: ${img.caption}` : ''}\n`;
     });
   }
 

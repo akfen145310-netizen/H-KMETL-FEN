@@ -4,7 +4,7 @@ import { isConverterAuthenticated } from '../utils/authService';
 
 export interface ChapterContent {
   id: string;
-  title: string;              // Fenbilim.net müfredatındaki alt konu başlığı (örn: "1. Bölüm: Gökyüzündeki Komşumuz: Güneş")
+  title: string;              // Maarif müfredatındaki alt konu başlığı (örn: "1. Bölüm: Gökyüzündeki Komşumuz: Güneş")
   hikmetliTitle?: string;      // Açılan sayfada kullanılacak Hikmetli Fen başlığı (örn: "Güneş: Semadaki İlahî Lamba ve Hayat Kaynağı")
   shortDescription: string;
   content: string;
@@ -13,7 +13,7 @@ export interface ChapterContent {
 
 export interface Unit {
   id: string;
-  title: string;              // Fenbilim.net ünite başlığı (örn: "1. ÜNİTE: Gökyüzündeki Komşularımız ve Biz")
+  title: string;              // Maarif ünite başlığı (örn: "1. ÜNİTE: Gökyüzündeki Komşularımız ve Biz")
   chapters: ChapterContent[];
 }
 
@@ -25,13 +25,15 @@ export interface Grade {
 }
 
 /**
- * Varsayılan sınıf verileri (Türkiye Yüzyılı Maarif Modeli ve Fenbilim.net'e tam uyumlu 5, 6, 7 ve 8. Sınıf)
+ * Varsayılan sınıf verileri (Türkiye Yüzyılı Maarif Modeli'ne tam uyumlu 5, 6, 7 ve 8. Sınıf)
  * Toplam 28 Ünite ve 73 Alt Başlık
  */
 export const gradesData: Grade[] = ALL_MAARIF_GRADES;
 
-export const GRADES_STORAGE_KEY = "hikmetli_fen_maarif_v6";
+export const GRADES_STORAGE_KEY = "hikmetli_fen_maarif_v8";
 const LEGACY_STORAGE_KEYS = [
+  "hikmetli_fen_maarif_v7",
+  "hikmetli_fen_maarif_v6",
   "hikmetli_fen_maarif_v5", 
   "hikmetli_fen_grades_v4", 
   "hikmetli_fen_grades_v3", 

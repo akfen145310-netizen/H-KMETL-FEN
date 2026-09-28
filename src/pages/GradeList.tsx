@@ -159,7 +159,7 @@ export default function GradeList() {
             </h2>
             
             <p className="text-primary-200 text-sm sm:text-base leading-relaxed">
-              5, 6, 7 ve 8. Sınıf Fen Bilimleri dersinin fenbilim.net ve Maarif müfredatındaki tüm ünite ve alt konu başlıklarını ({stats.unitCount} Ünite, {stats.chapterCount} Konu) tek tıkla kütüphanenize yükleyin. Her bir alt başlık "Hikmetli Yorum Çıktısı Kuralları"na tam uyumlu biçimde açılacaktır.
+              5, 6, 7 ve 8. Sınıf Fen Bilimleri dersinin Türkiye Yüzyılı Maarif müfredatındaki tüm ünite ve alt konu başlıklarını ({stats.unitCount} Ünite, {stats.chapterCount} Konu) tek tıkla kütüphanenize yükleyin. Her bir alt başlık "Hikmetli Yorum Çıktısı Kuralları"na tam uyumlu biçimde açılacaktır.
             </p>
 
             <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-primary-300">

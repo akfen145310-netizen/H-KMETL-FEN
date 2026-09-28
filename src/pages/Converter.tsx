@@ -673,7 +673,7 @@ export default function Converter() {
                     type="url"
                     value={inputUrl}
                     onChange={(e) => setInputUrl(e.target.value)}
-                    placeholder="https://www.fenbilim.net/2020/09/5-sinif-gunes-dunya-ve-ay.html"
+                    placeholder="https://ogmmateryal.eba.gov.tr/panel/upload/etkilesimli/kitap/fenbilimleri/5/..."
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-primary-300 focus:outline-none focus:border-primary-900 focus:ring-1 focus:ring-primary-900 text-sm text-primary-900 placeholder:text-primary-400 font-sans"
                   />
                 </div>
@@ -681,32 +681,41 @@ export default function Converter() {
                 {/* Quick Samples */}
                 <div className="mt-4 p-3.5 bg-primary-50/70 rounded-xl border border-primary-100">
                   <span className="text-xs font-bold text-primary-800/80 block mb-2">
-                    💡 Hızlı Test Linkleri (Tıklayıp Deneyin):
+                    💡 Hızlı Test Konuları (Tıklayıp Deneyin):
                   </span>
                   <div className="flex flex-col gap-1.5">
                     <button
                       type="button"
-                      onClick={() => setInputUrl('https://www.fenbilim.net/2017/07/5-sinif-gunesin-yapisi-ve-ozellikleri.html')}
+                      onClick={() => {
+                        setInputText("Güneş, Samanyolu Galaksisi'nde orta büyüklükte bir yıldızdır. Dünyamıza en yakın yıldız Güneş'tir. Çekirdek, ışık küre, renk küre ve taç küre katmanlarından oluşur. Hidrojenin helyuma dönüşmesiyle ısı ve ışık yayar.");
+                        setInputMode('text');
+                      }}
                       className="text-left text-xs text-primary-900 hover:text-primary-950 font-medium p-1.5 rounded-lg hover:bg-white transition cursor-pointer flex items-center justify-between"
                     >
-                      <span>☀️ 5. Sınıf: Güneş'in Yapısı ve Özellikleri</span>
-                      <span className="text-[10px] text-primary-500 font-mono">fenbilim.net</span>
+                      <span>☀️ 5. Sınıf: Güneş'in Yapısı ve Katmanları</span>
+                      <span className="text-[10px] text-primary-500 font-mono">Örnek Metin</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setInputUrl('https://www.fenbilim.net/2017/07/5-sinif-ayin-hareketleri-ve-evreleri.html')}
+                      onClick={() => {
+                        setInputText("Ay, Dünya'mızın tek doğal uydusudur. Atmosferi yok denecek kadar incedir. Ay'ın ana evreleri: Yeni ay, ilk dördün, dolunay ve son dördündür. Dünya etrafında 27,3 günde dolanır.");
+                        setInputMode('text');
+                      }}
                       className="text-left text-xs text-primary-900 hover:text-primary-950 font-medium p-1.5 rounded-lg hover:bg-white transition cursor-pointer flex items-center justify-between"
                     >
-                      <span>🌙 5. Sınıf: Ay'ın Hareketleri ve Evreleri</span>
-                      <span className="text-[10px] text-primary-500 font-mono">fenbilim.net</span>
+                      <span>🌙 5. Sınıf: Ay'ın Evreleri ve Özellikleri</span>
+                      <span className="text-[10px] text-primary-500 font-mono">Örnek Metin</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setInputUrl('https://www.fenbilim.net/2015/03/5-sinif-surtunme-kuvveti.html')}
+                      onClick={() => {
+                        setInputText("Sürtünme kuvveti temas halindeki yüzeyler arasında hareketi zorlaştıran kuvvettir. Pürüzlü yüzeylerde sürtünme fazla, kaygan yüzeylerde azdır. Hava direnci ve su direnci sürtünme kuvveti çeşitleridir.");
+                        setInputMode('text');
+                      }}
                       className="text-left text-xs text-primary-900 hover:text-primary-950 font-medium p-1.5 rounded-lg hover:bg-white transition cursor-pointer flex items-center justify-between"
                     >
                       <span>⚖️ 5. Sınıf: Sürtünme Kuvveti</span>
-                      <span className="text-[10px] text-primary-500 font-mono">fenbilim.net</span>
+                      <span className="text-[10px] text-primary-500 font-mono">Örnek Metin</span>
                     </button>
                   </div>
                 </div>
@@ -927,12 +936,28 @@ export default function Converter() {
                       );
                     },
                     p(props: any) {
-                      const text = String(props.children || '');
-                      // If the paragraph is only a citation line that HikmetliImage already renders, hide it to prevent duplicate text
-                      if (text.includes('fenbilim.net alıntıdır') && text.includes('Resim Link')) {
-                        return null;
+                      const childrenArray = React.Children.toArray(props.children);
+                      const hasBlockChild = childrenArray.some((child: any) => {
+                        if (!React.isValidElement(child)) return false;
+                        const type: any = child.type;
+                        const typeName = typeof type === 'function' ? type.name : (typeof type === 'string' ? type : '');
+                        const childProps = (child as any).props;
+                        return (
+                          typeName === 'HikmetliImage' ||
+                          typeName === 'img' ||
+                          type === 'img' ||
+                          type === 'figure' ||
+                          type === 'div' ||
+                          Boolean(childProps?.src) ||
+                          Boolean(childProps?.node?.tagName === 'img')
+                        );
+                      });
+
+                      if (hasBlockChild) {
+                        return <div className="my-4">{props.children}</div>;
                       }
-                      return <p {...props}>{props.children}</p>;
+
+                      return <p {...props} className="my-3 leading-relaxed text-primary-950/90">{props.children}</p>;
                     },
                   }}
                 >

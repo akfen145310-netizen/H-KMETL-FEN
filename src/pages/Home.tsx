@@ -28,21 +28,40 @@ export default function Home() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="flex flex-col items-center justify-center gap-4 max-w-2xl mx-auto"
         >
           <Link
             to="/kutuphane"
-            className="flex items-center gap-2 bg-primary-900 text-white px-8 py-3 rounded-full font-medium hover:bg-primary-800 transition shadow-lg hover:shadow-xl w-full sm:w-auto justify-center"
+            className="group w-full flex flex-col sm:flex-row items-center justify-between gap-3 bg-linear-to-r from-primary-950 via-primary-900 to-primary-950 text-white p-4 sm:p-5 rounded-3xl font-medium hover:from-primary-900 hover:to-primary-800 transition shadow-xl hover:shadow-2xl border-2 border-primary-700/80 cursor-pointer"
           >
-            <BookType className="w-5 h-5" />
-            Kütüphaneyi Keşfet
+            <div className="flex items-center gap-3.5 text-left">
+              <div className="w-12 h-12 rounded-2xl bg-amber-400 text-primary-950 flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
+                <BookType className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                  <span className="bg-amber-400/20 text-amber-300 border border-amber-300/30 px-2 py-0.5 rounded-full text-3xs font-bold uppercase tracking-wider">
+                    5 • 6 • 7 • 8. Sınıf
+                  </span>
+                  <span className="text-3xs text-primary-200 font-medium">Tüm Fen Müfredatı</span>
+                </div>
+                <div className="text-base sm:text-lg font-serif font-bold text-white group-hover:text-amber-200 transition-colors leading-snug">
+                  5. Sınıf, 6. Sınıf, 7. Sınıf, 8. Sınıf Fen için Kütüphaneyi Tıklatıp Giriş Yapabilirsiniz
+                </div>
+              </div>
+            </div>
+            <div className="shrink-0 flex items-center gap-1 bg-white/10 group-hover:bg-amber-400 group-hover:text-primary-950 text-amber-300 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all">
+              <span>Giriş Yap</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </div>
           </Link>
+
           <Link
             to="/donusturucu"
-            className="flex items-center gap-2 bg-white text-primary-900 border-2 border-primary-200 px-8 py-3 rounded-full font-medium hover:bg-primary-50 transition w-full sm:w-auto justify-center group"
+            className="flex items-center gap-2 bg-white/90 text-primary-900 border border-primary-200 px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold hover:bg-primary-50 transition w-full sm:w-auto justify-center group shadow-xs"
           >
-            <Sparkles className="w-5 h-5 text-amber-500 group-hover:rotate-12 transition-transform" />
-            <span>Metin Dönüştür</span>
+            <Sparkles className="w-4 h-4 text-amber-500 group-hover:rotate-12 transition-transform" />
+            <span>Hikmetli Fen Metin Dönüştürücü</span>
             <span className="text-3xs bg-amber-100 text-amber-950 font-bold px-2 py-0.5 rounded-full border border-amber-300 flex items-center gap-0.5 ml-1">
               <Lock className="w-2.5 h-2.5 text-amber-700" />
               Yetkili

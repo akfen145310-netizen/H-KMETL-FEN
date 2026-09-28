@@ -228,7 +228,7 @@ export default function ChapterView() {
       <article className="bg-white rounded-3xl shadow-sm border border-primary-100">
         {/* PDF Capture Region Starts Here */}
         <div ref={pdfRef} className="bg-white pb-12 rounded-3xl overflow-hidden">
-          {chapter.imageUrl && (
+          {chapter.imageUrl ? (
             <div className="w-full h-64 md:h-96 relative">
               <img 
                 src={chapter.imageUrl} 
@@ -252,28 +252,35 @@ export default function ChapterView() {
                 </div>
               </div>
             </div>
+          ) : (
+            <div className="w-full bg-linear-to-r from-primary-950 via-primary-900 to-primary-950 text-white p-8 sm:p-12 md:p-16 relative overflow-hidden border-b border-primary-800">
+              <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-80 h-80 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative z-10 max-w-4xl">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="bg-amber-400 text-primary-950 text-2xs font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    {grade.name}
+                  </span>
+                  <span className="text-primary-200 text-xs font-medium">
+                    {unit?.title}
+                  </span>
+                </div>
+                <div className="inline-block bg-white/10 border border-white/20 text-amber-300 text-xs font-semibold px-3 py-1 rounded-lg mb-4">
+                  Müfredat Konusu: {chapter.title}
+                </div>
+                <h1 className="text-2xl sm:text-4xl md:text-5xl font-serif font-bold text-white leading-tight">
+                  {chapter.hikmetliTitle || chapter.title}
+                </h1>
+              </div>
+            </div>
           )}
 
-          <div className={`px-6 sm:px-8 md:px-12 lg:px-16 ${!chapter.imageUrl ? 'pt-10 md:pt-14' : 'pt-8 md:pt-10'}`}>
-             {!chapter.imageUrl && (
-                <div className="mb-10">
-                   <div className="text-primary-800/60 font-medium text-sm mb-2 uppercase tracking-widest">
-                    {grade.name} • {unit?.title}
-                  </div>
-                  <div className="inline-block bg-primary-100 text-primary-900 text-xs font-semibold px-2.5 py-1 rounded-md mb-3">
-                    Müfredat Konusu: {chapter.title}
-                  </div>
-                  <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary-900 leading-tight">
-                    {chapter.hikmetliTitle || chapter.title}
-                  </h1>
-                </div>
-             )}
+          <div className="px-6 sm:px-8 md:px-12 lg:px-16 pt-8 md:pt-10">
              <div className="markdown-body">
                 <Markdown
                   remarkPlugins={[remarkGfm]}
                   components={{
                     img(props: any) {
-                      return <HikmetliImage {...props} />;
+                      return <HikmetliImage {...props} chapterId={chapter.id} />;
                     },
                     table(props: any) {
                       return (
@@ -283,12 +290,29 @@ export default function ChapterView() {
                       );
                     },
                     p(props: any) {
-                      const text = String(props.children || '');
-                      // If the paragraph is only a citation line that HikmetliImage already renders, hide it to prevent duplicate text
-                      if (text.includes('fenbilim.net alıntıdır') && text.includes('Resim Link')) {
-                        return null;
+                      // Check if any child is an image, HikmetliImage, or block element
+                      const childrenArray = React.Children.toArray(props.children);
+                      const hasBlockChild = childrenArray.some((child: any) => {
+                        if (!React.isValidElement(child)) return false;
+                        const type: any = child.type;
+                        const typeName = typeof type === 'function' ? type.name : (typeof type === 'string' ? type : '');
+                        const childProps = (child as any).props;
+                        return (
+                          typeName === 'HikmetliImage' ||
+                          typeName === 'img' ||
+                          type === 'img' ||
+                          type === 'figure' ||
+                          type === 'div' ||
+                          Boolean(childProps?.src) ||
+                          Boolean(childProps?.node?.tagName === 'img')
+                        );
+                      });
+
+                      if (hasBlockChild) {
+                        return <div className="my-6">{props.children}</div>;
                       }
-                      return <p {...props}>{props.children}</p>;
+
+                      return <p {...props} className="my-4 leading-relaxed text-primary-950/90">{props.children}</p>;
                     },
                     code(props: any) {
                       const {children, className, node, ...rest} = props;
